@@ -1,0 +1,20 @@
+services:
+  collector:
+    image: alpine:latest
+    environment:
+      - HOME=/home/user
+      - UID=${UID}
+      - GID=${GID}
+    entrypoint: ["/bin/sh","-c"]
+    #user: "${UID}:${GID}"
+    volumes:
+      - ${PWD}/bundle/${ARCH_OS}:/home/user
+      - ${PWD}/downloads/${ARCH_OS}:/opt/downloads
+      - ${PWD}/scripts/${ARCH_OS}:/opt/scripts
+      - ${PWD}/files/${ARCH_OS}:/opt/files
+    working_dir: /home/user
+    command:
+    - |
+      apk add -U --no-cache git curl bash setpriv rsync
+      #su ${UID} -c /opt/scripts/collector.sh
+      setpriv --reuid=${UID} --regid=${GID} --clear-groups /opt/scripts/collector.sh 
