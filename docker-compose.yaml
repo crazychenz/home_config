@@ -5,7 +5,10 @@ services:
       - HOME=/home/user
       - UID=${UID}
       - GID=${GID}
-    entrypoint: ["/bin/sh","-c"]
+      - LANG=en_US.UTF-8
+      - LANGUAGE=en_US:en
+      - LC_ALL=en_US.UTF-8
+      - TERM=screen-256color
     #user: "${UID}:${GID}"
     volumes:
       - ${PWD}/bundle/${ARCH_OS}:/home/user
@@ -13,8 +16,15 @@ services:
       - ${PWD}/scripts/${ARCH_OS}:/opt/scripts
       - ${PWD}/files/${ARCH_OS}:/opt/files
     working_dir: /home/user
+    stdin_open: true
+    tty: true
+    entrypoint: ["/bin/sh","-c"]
     command:
     - |
-      apk add -U --no-cache git curl bash setpriv rsync
+      apk add -U --no-cache git curl bash setpriv rsync yq
+      apk add -U --no-cache ncurses # required for tput 
+      apk add -U --no-cache neovim # neovim.io requires glibc
+      apk add -U --no-cache btop
+      apk add -U --no-cache build-base # alpine-sdk # build-essential
       #su ${UID} -c /opt/scripts/collector.sh
-      setpriv --reuid=${UID} --regid=${GID} --clear-groups /opt/scripts/collector.sh 
+      setpriv --reuid=${UID} --regid=${GID} --clear-groups /opt/scripts/collector.sh

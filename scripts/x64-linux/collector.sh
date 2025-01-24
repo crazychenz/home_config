@@ -9,6 +9,11 @@ VIVID_VERSION=v0.10.1
 YAZI_VERSION=v0.4.2
 GLOW_VERSION=2.0.0
 
+VIVID_THEME=catppuccin-mocha
+LAZYGIT_THEME=mocha/blue.yml
+YAZI_THEME=mocha/catppuccin-mocha-yellow.toml
+BTOP_THEME=catppuccin_mocha.theme
+K9S_THEME=catppuccin-mocha
 
 mkdir -p ${HOME}/.config
 mkdir -p ${HOME}/.local/bin
@@ -16,6 +21,7 @@ cp /opt/files/bashrc ${HOME}/.bashrc
 cp /opt/files/bash-user-settings.sh ${HOME}/.bash-user-settings.sh
 echo "source ~/.bash-user-settings.sh" >> ${HOME}/.bashrc
 echo "export PATH=~/.local/bin:\$PATH" >> ${HOME}/.bashrc
+echo "export LS_COLORS=\"\$(vivid generate ${VIVID_THEME})\"" >> ${HOME}/.bashrc
 export PATH=~/.local/bin:$PATH
 #echo PATH is $PATH
 
@@ -45,15 +51,29 @@ ${HOME}/.tmux/plugins/tpm/scripts/install_plugins.sh
 tmux kill-server
 
 
-#https://github.com/neovim/neovim/releases
-cd /opt/downloads
-if [ -e "nvim-linux64.tar.gz" ]; then
-  echo "tmux already downloaded. Skipping"
-else
-  curl -LO https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux64.tar.gz
-fi
-tar -xf nvim-linux64.tar.gz
-rsync -a nvim-linux64/ ${HOME}/.local/
+##https://github.com/neovim/neovim/releases
+##cd /opt/downloads
+##if [ -e "nvim-linux64.tar.gz" ]; then
+##  echo "nvim (gnu) already downloaded. Skipping"
+##else
+##  # Requires glibc
+##  curl -LO https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux64.tar.gz
+##fi
+###tar -xf nvim-linux64.tar.gz
+###rsync -a nvim-linux64/ ${HOME}/.local/
+
+
+##if [ -e "nvim.appimage" ]; then
+##  echo "nvim (appimage) already downloaded. Skipping"
+##else
+##  # Requires fuse
+##  curl -LO https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim.appimage
+##fi
+##cp nvim.appimage ${HOME}/.local/bin/nvima
+##chmod +x ${HOME}/.local/bin/nvima
+
+# In Alpine we install neovim from repo.
+# Nvchad wants a compiler.
 
 # https://github.com/NvChad/NvChad
 git clone https://github.com/NvChad/starter ${HOME}/.config/nvim
@@ -61,6 +81,13 @@ echo "" >> ${HOME}/.config/nvim/init.lua
 echo 'vim.cmd("hi Normal guibg=NONE")' >> ${HOME}/.config/nvim/init.lua
 echo "vim.cmd(\"cnoreabbrev <expr> q getcmdtype() == \\\":\\\" && getcmdline() == 'q' ? '' : 'q'\")" >> ${HOME}/.config/nvim/init.lua
 cp /opt/files/nvim-lua-mappings.lua ${HOME}/.config/nvim/lua/mappings.lua
+nvim &
+NVIM_PID=$!
+sleep 15
+kill $NVIM_PID
+tput reset
+tput cnorm
+clear
 
 
 cd /opt/downloads
@@ -71,6 +98,14 @@ else
 fi
 tar -xf lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz
 cp lazygit ${HOME}/.local/bin/
+# Theme it.
+mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
+git clone https://github.com/catppuccin/lazygit
+mkdir -p $(lazygit --print-config-dir)
+touch $(lazygit --print-config-dir)/config.yml
+ln -s ${HOME}/.config/catppuccin/lazygit/themes/${LAZYGIT_THEME} $(lazygit --print-config-dir)/theme.yml
+echo "export LG_CONFIG_FILE=\"$(lazygit --print-config-dir)/config.yml,$(lazygit --print-config-dir)/theme.yml\"" >> ./.bashrc
+
 
 
 cd /opt/downloads
@@ -89,9 +124,14 @@ if [ -e "yazi-x86_64-unknown-linux-musl.zip" ]; then
 else
   curl -LO https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-x86_64-unknown-linux-musl.zip
 fi
-unzip yazi-x86_64-unknown-linux-musl.zip
+unzip -o yazi-x86_64-unknown-linux-musl.zip
 cp yazi-x86_64-unknown-linux-musl/yazi ${HOME}/.local/bin/
 cp yazi-x86_64-unknown-linux-musl/ya ${HOME}/.local/bin/
+# Theme it.
+mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
+git clone https://github.com/catppuccin/yazi
+mkdir -p ${HOME}/.config/yazi
+ln -s ${HOME}/.config/catppuccin/yazi/themes/${YAZI_THEME} ~/.config/yazi/theme.toml
 
 
 cd /opt/downloads
@@ -148,49 +188,63 @@ tar -xf get-all-amd64-linux.tar.gz get-all-amd64-linux
 mv get-all-amd64-linux ${HOME}/.local/bin/kubectl-get_all
 
 
+# Theme btop.
+mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
+git clone https://github.com/catppuccin/btop
+mkdir -p ${HOME}/.config/btop/themes
+ln -s ${HOME}/.config/catppuccin/btop/themes/${BTOP_THEME} ${HOME}/.config/btop/themes/
 
 
+# This requires manual setup, but we'll throw themes in the bundle.
+mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
+git clone https://github.com/catppuccin/tty
 
 
-#catppuccin
-mkdir -p /opt/downloads/catppuccin
-# tmux
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/tmux
-# lazygit
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/lazygit
-# vivid?
-# yazi
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/yazi
-# nvim
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/nvim
-# btop
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/btop
-# k9s
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/k9s
+cd /opt/downloads
+if [ -e "k9s_Linux_amd64.tar.gz" ]; then
+  echo "k9s already downloaded. skipping."
+else
+  curl -LO https://github.com/derailed/k9s/releases/download/v0.32.7/k9s_Linux_amd64.tar.gz
+fi
+tar -xf k9s_Linux_amd64.tar.gz
+cp k9s ${HOME}/.local/bin/
+# Theme it.
+mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
+git clone https://github.com/catppuccin/k9s
+mkdir -p ${HOME}/.config/k9s/skins
+cp ${HOME}/.config/catppuccin/k9s/dist/* ${HOME}/.config/k9s/skins/
+k9s &
+K9S_PID=$!
+sleep 1
+kill $K9S_PID
+tput reset
+tput cnorm
+clear
+yq eval ".k9s.ui.skin = ${K9S_THEME}" -i ~/.config/k9s/config.yaml
+
 # starship
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/starship
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/starship
 # lsd
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/lsd
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/lsd
 # cutter
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/cutter
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/cutter
 # fzf
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/fzf
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/fzf
 # ghidra?
 # tty
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/tty
 #
 # aerc? - email client
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/aerc
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/aerc
 # imhex
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/imhex
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/imhex
 # spotify-tui
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/spotify-tui
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/spotify-tui
 # asciinema
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/asciinema
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/asciinema
 # lxqt
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/lxqt
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/lxqt
 # duckduckgo
-cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/duckduckgo
+#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/duckduckgo
 
 
 
@@ -205,3 +259,7 @@ cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/duckduck
 # vscodium
 # zed
 # alacritty
+#
+#
+cd /home/user
+/bin/bash -i 

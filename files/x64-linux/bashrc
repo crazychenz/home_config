@@ -112,5 +112,3 @@ if ! shopt -oq posix; then
   fi
 fi
 
-PATH=$PATH:/usr/local/nvim/bin:~/.local/bin
-source /home/chenz/.bash-user-settings.sh
