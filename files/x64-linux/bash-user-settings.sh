@@ -87,10 +87,9 @@ export KUBECONFIG=~/node0.yaml
 export EDITOR=vim
 export PROMPT_COMMAND='history -a'
 eval $(ssh-agent -s)
-alias myip='dig +short myip.opendns.com @resolver1.opendns.com'
+alias myip='curl ifconfig.me'
 
 reload_vscode_ipc() {
   export VSCODE_IPC_HOOK_CLI=$(ls -tr /run/user/$UID/vscode-ipc-* | tail -n 1)
 }; reload_vscode_ipc
 
-alias vi=nvim

@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+USER_SETTINGS_FPATH=${HOME}/.bash-user-settings.sh
+
 K3S_VERSION=v1.30.0%2Bk3s1
 KETALL_VERSION=v1.3.8
 TMUX_VERSION=v3.3a
@@ -15,16 +17,28 @@ YAZI_THEME=mocha/catppuccin-mocha-yellow.toml
 BTOP_THEME=catppuccin_mocha.theme
 K9S_THEME=catppuccin-mocha
 
-mkdir -p ${HOME}/.config
-mkdir -p ${HOME}/.local/bin
-cp /opt/files/bashrc ${HOME}/.bashrc
-cp /opt/files/bash-user-settings.sh ${HOME}/.bash-user-settings.sh
-echo "source ~/.bash-user-settings.sh" >> ${HOME}/.bashrc
-echo "export PATH=~/.local/bin:\$PATH" >> ${HOME}/.bashrc
-echo "export LS_COLORS=\"\$(vivid generate ${VIVID_THEME})\"" >> ${HOME}/.bashrc
-export PATH=~/.local/bin:$PATH
-#echo PATH is $PATH
+### Initialize config setup
 
+mkdir -p ${HOME}/.config && chmod 700 ${HOME}/.config
+mkdir -p ${HOME}/.local/bin && chmod 700 ${HOME}/.local
+# Initialize .bash-user-settings.sh, a key entry point for my other config setups.
+cp /opt/files/bash-user-settings.sh ${USER_SETTINGS_FPATH}
+
+#if [ -e "${HOME}/.bashrc" ]; then
+#  if [ -z "$(grep 'bash-user-settings.sh' ${HOME}/.bashrc)" ]; then
+#    # bash-user-settings not found in bashrc, assume its ok to append
+#    echo "source ~/.bash-user-settings.sh" >> ${HOME}/.bashrc
+#  fi
+#else
+#  echo "Could not find bashrc. Run \`echo \"source ~/.bash-user-settings.sh\" \>\> ~/.bashrc\` manually."
+#fi
+
+# All the things we'll install go into .local/bin, add it to path (w/ precedence).
+echo "export PATH=~/.local/bin:\$PATH" >> ${USER_SETTINGS_FPATH}
+export PATH=~/.local/bin:$PATH
+
+
+### Setup Tmux
 # https://github.com/mjakob-gh/build-static-tmux/releases
 cd /opt/downloads
 if [ -e "tmux.linux-amd64.gz" ]; then
@@ -34,7 +48,6 @@ else
 fi
 zcat tmux.linux-amd64.gz > ${HOME}/.local/bin/tmux
 chmod +x ${HOME}/.local/bin/tmux
-
 
 # https://github.com/tmux-plugins/tpm
 mkdir -p ${HOME}/.tmux/plugins
@@ -51,6 +64,17 @@ ${HOME}/.tmux/plugins/tpm/scripts/install_plugins.sh
 tmux kill-server
 
 
+### Setup NeoVim
+
+# Known Issues:
+# - NeoVim is not statically built.
+# - Upstream NeoVim requires glibc so it will not work on alpine.
+# - Upstream NeoVim appimage's are no better, and also require GNU symbols.
+# - AppImage's IIRC require fuse (a kernel module), something not everywhere.
+# - In Alpine we install neovim from repo.
+# - Nvchad wants a compiler. (debian - build_essential, alpine - build-base)
+
+## Upstream NeoVim
 ##https://github.com/neovim/neovim/releases
 ##cd /opt/downloads
 ##if [ -e "nvim-linux64.tar.gz" ]; then
@@ -62,7 +86,7 @@ tmux kill-server
 ###tar -xf nvim-linux64.tar.gz
 ###rsync -a nvim-linux64/ ${HOME}/.local/
 
-
+## Upstream NeoVim with AppImage
 ##if [ -e "nvim.appimage" ]; then
 ##  echo "nvim (appimage) already downloaded. Skipping"
 ##else
@@ -72,9 +96,6 @@ tmux kill-server
 ##cp nvim.appimage ${HOME}/.local/bin/nvima
 ##chmod +x ${HOME}/.local/bin/nvima
 
-# In Alpine we install neovim from repo.
-# Nvchad wants a compiler.
-
 # https://github.com/NvChad/NvChad
 git clone https://github.com/NvChad/starter ${HOME}/.config/nvim
 echo "" >> ${HOME}/.config/nvim/init.lua
@@ -83,12 +104,15 @@ echo "vim.cmd(\"cnoreabbrev <expr> q getcmdtype() == \\\":\\\" && getcmdline() =
 cp /opt/files/nvim-lua-mappings.lua ${HOME}/.config/nvim/lua/mappings.lua
 nvim &
 NVIM_PID=$!
-sleep 15
+echo "Waiting 30 seconds to give NVIM time to download plugins."
+sleep 30
 kill $NVIM_PID
 tput reset
 tput cnorm
 clear
 
+
+### Setup LazyGit
 
 cd /opt/downloads
 if [ -e "lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" ]; then
@@ -103,10 +127,11 @@ mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/
 git clone https://github.com/catppuccin/lazygit
 mkdir -p $(lazygit --print-config-dir)
 touch $(lazygit --print-config-dir)/config.yml
-ln -s ${HOME}/.config/catppuccin/lazygit/themes/${LAZYGIT_THEME} $(lazygit --print-config-dir)/theme.yml
-echo "export LG_CONFIG_FILE=\"$(lazygit --print-config-dir)/config.yml,$(lazygit --print-config-dir)/theme.yml\"" >> ./.bashrc
+cp ${HOME}/.config/catppuccin/lazygit/themes/mocha/blue.yml $(lazygit --print-config-dir)/theme.yml 
+echo "export LG_CONFIG_FILE=\"\$(lazygit --print-config-dir)/config.yml,\$(lazygit --print-config-dir)/theme.yml\"" >> ${USER_SETTINGS_FPATH}
 
 
+### Setup Vivid
 
 cd /opt/downloads
 if [ -e "vivid-${VIVID_VERSION}-x86_64-unknown-linux-musl.tar.gz" ]; then
@@ -117,6 +142,12 @@ fi
 tar -xf vivid-${VIVID_VERSION}-x86_64-unknown-linux-musl.tar.gz
 cp /opt/downloads/vivid-${VIVID_VERSION}-x86_64-unknown-linux-musl/vivid ${HOME}/.local/bin/
 
+### Setup LS_COLORS with vivid.
+echo "export LS_COLORS=\"\$(vivid generate ${VIVID_THEME})\"" >> ${USER_SETTINGS_FPATH}
+#echo PATH is $PATH
+
+
+### Setup Yazi
 
 cd /opt/downloads
 if [ -e "yazi-x86_64-unknown-linux-musl.zip" ]; then
@@ -131,8 +162,10 @@ cp yazi-x86_64-unknown-linux-musl/ya ${HOME}/.local/bin/
 mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
 git clone https://github.com/catppuccin/yazi
 mkdir -p ${HOME}/.config/yazi
-ln -s ${HOME}/.config/catppuccin/yazi/themes/${YAZI_THEME} ~/.config/yazi/theme.toml
+cp ${HOME}/.config/catppuccin/yazi/themes/${YAZI_THEME} ~/.config/yazi/theme.toml
 
+
+### Setup glow
 
 cd /opt/downloads
 if [ -e "glow_${GLOW_VERSION}_Linux_x86_64.tar.gz" ]; then
@@ -144,18 +177,7 @@ tar -xf glow_${GLOW_VERSION}_Linux_x86_64.tar.gz
 cp /opt/downloads/glow_${GLOW_VERSION}_Linux_x86_64/glow ${HOME}/.local/bin/
 
 
-
-
-
-
-## https://github.com/fluxcd/flux2/releases
-#cd /opt/downloads
-#if [ -e "flux_2.3.0_linux_amd64.tar.gz" ]; then
-#  echo "flux_2.3.0_linux_amd64.tar.gz already downloaded. Skipping."
-#else
-#  curl -LO https://github.com/fluxcd/flux2/releases/download/v2.3.0/flux_2.3.0_linux_amd64.tar.gz
-#fi
-
+### Setup K8s and tools
 
 # https://github.com/k3s-io/k3s/releases
 cd /opt/downloads
@@ -167,15 +189,22 @@ else
 fi
   # Install k3s to bundle
 cp k3s ${HOME}/.local/bin/
-ln ${HOME}/.local/bin/k3s ${HOME}/.local/bin/kubectl
+chmod +x k3s
+cd ${HOME}/.local/bin ; ln -s k3s kubectl
 chmod +x ${HOME}/.local/bin/kubectl
 # Add kubectl completion to bash config
-echo "source <(kubectl completion bash)" >> ~/.bashrc
+echo "source <(kubectl completion bash)" >> ${USER_SETTINGS_FPATH}
 # Add alias w/ completion
-echo "alias kc=kubectl" >> ~/.bashrc
-echo "complete -o default -F __start_kubectl kc" >> ~/.bashrc
-chmod +x k3s
+echo "alias kc=kubectl" >> ${USER_SETTINGS_FPATH} 
+echo "complete -o default -F __start_kubectl kc" >> ${USER_SETTINGS_FPATH}
 
+## https://github.com/fluxcd/flux2/releases
+#cd /opt/downloads
+#if [ -e "flux_2.3.0_linux_amd64.tar.gz" ]; then
+#  echo "flux_2.3.0_linux_amd64.tar.gz already downloaded. Skipping."
+#else
+#  curl -LO https://github.com/fluxcd/flux2/releases/download/v2.3.0/flux_2.3.0_linux_amd64.tar.gz
+#fi
 
 # https://github.com/corneliusweig/ketall/releases
 cd /opt/downloads/
@@ -186,18 +215,6 @@ else
 fi
 tar -xf get-all-amd64-linux.tar.gz get-all-amd64-linux
 mv get-all-amd64-linux ${HOME}/.local/bin/kubectl-get_all
-
-
-# Theme btop.
-mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
-git clone https://github.com/catppuccin/btop
-mkdir -p ${HOME}/.config/btop/themes
-ln -s ${HOME}/.config/catppuccin/btop/themes/${BTOP_THEME} ${HOME}/.config/btop/themes/
-
-
-# This requires manual setup, but we'll throw themes in the bundle.
-mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
-git clone https://github.com/catppuccin/tty
 
 
 cd /opt/downloads
@@ -222,35 +239,60 @@ tput cnorm
 clear
 yq eval ".k9s.ui.skin = ${K9S_THEME}" -i ~/.config/k9s/config.yaml
 
+
+### Setup btop
+
+# Theme btop.
+mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
+git clone https://github.com/catppuccin/btop
+mkdir -p ${HOME}/.config/btop/themes
+cp ${HOME}/.config/catppuccin/btop/themes/${BTOP_THEME} ${HOME}/.config/btop/themes/
+
+
+### Setup tty
+
+# This requires manual setup, but we'll throw themes in the bundle.
+mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/ 
+git clone https://github.com/catppuccin/tty
+
+
+### End of script, open shell if indicated.
+
+cd /home/user
+if [ "${OPEN_SHELL}" == "yes" ]; then
+  /bin/bash -i
+fi
+
+### Other tools to consider integrating:
 # starship
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/starship
+#   theme: https://github.com/catppuccin/starship
 # lsd
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/lsd
+#   theme: https://github.com/catppuccin/lsd
 # cutter
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/cutter
+#   theme: https://github.com/catppuccin/cutter
 # fzf
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/fzf
-# ghidra?
-# tty
+#   theme: https://github.com/catppuccin/fzf
+
+
+### Other tools to consider looking at:
 #
-# aerc? - email client
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/aerc
+# Ghidra - binary analysis
+# aerc - email client
+#   theme: https://github.com/catppuccin/aerc
 # imhex
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/imhex
+#   theme: https://github.com/catppuccin/imhex
 # spotify-tui
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/spotify-tui
+#   theme: https://github.com/catppuccin/spotify-tui
 # asciinema
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/asciinema
+#   theme: https://github.com/catppuccin/asciinema
 # lxqt
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/lxqt
+#   theme: https://github.com/catppuccin/lxqt
 # duckduckgo
-#cd /opt/downloads/catppuccin && git clone https://github.com/catppuccin/duckduckgo
+#   theme: https://github.com/catppuccin/duckduckgo
 
 
-
-
-
-# Things to checkout, but not here.
+### Other things to checkout, but not here.
+#
 # sidebery - firefox bookmark manager
 # insomnia - postman oss
 # brave browser
@@ -259,9 +301,6 @@ yq eval ".k9s.ui.skin = ${K9S_THEME}" -i ~/.config/k9s/config.yaml
 # vscodium
 # zed
 # alacritty
-#
-#
-cd /home/user
-if [ "${OPEN_SHELL}" == "yes" ]; then
-  /bin/bash -i
-fi
+
+
+

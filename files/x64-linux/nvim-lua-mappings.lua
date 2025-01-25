@@ -21,6 +21,7 @@ require("which-key").add({
   { "<C-l>", "<cmd>TmuxNavigateRight<CR>", desc = "Pane Right" },
   { "<C-j>", "<cmd>TmuxNavigateDown<CR>", desc = "Pane Down" },
   { "<C-k>", "<cmd>TmuxNavigateUp<CR>", desc = "Pane Up" },
+  { "<C-s>", "<cmd>write<CR>", desc = "Save File" },
   { "<leader>hh", function()
       require("nvchad.term").new { pos = "sp" }
     end, desc = "new horiz term" },
