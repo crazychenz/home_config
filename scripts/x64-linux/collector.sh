@@ -243,7 +243,8 @@ kill $K9S_PID
 tput reset
 tput cnorm
 clear
-yq eval '.k9s.ui.skin = "${K9S_THEME}"' -i ~/.config/k9s/config.yaml
+YQ_EXPR=".k9s.ui.skin = \"${K9S_THEME}\""
+yq eval "${YQ_EXPR}" -i ~/.config/k9s/config.yaml
 
 
 ### Setup btop
