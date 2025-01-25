@@ -236,7 +236,7 @@ mkdir -p ${HOME}/.config/catppuccin/ && cd ${HOME}/.config/catppuccin/
 git clone https://github.com/catppuccin/k9s
 mkdir -p ${HOME}/.config/k9s/skins
 cp ${HOME}/.config/catppuccin/k9s/dist/* ${HOME}/.config/k9s/skins/
-k9s &
+k9s --headless &
 K9S_PID=$!
 sleep 1
 kill $K9S_PID
