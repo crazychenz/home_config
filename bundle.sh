@@ -11,7 +11,7 @@ cat >${SCRIPT_NAME} <<SH_EOF
 export DEST=home_config_backup-\$(date +%Y%m%d-%H%M%S) ; mkdir \${DEST} ; rsync -a .bash-user-settings.sh \${DEST}/ ; rsync -a .tmux.conf \${DEST}/ ; rsync -a .config/ \${DEST}/.config/ ; rsync -a .local/ \${DEST}/.local/ ; rsync -a .tmux/ \${DEST}/.tmux/ ; rsync -a .cache/ \${DEST}/.cache/
 sed '1,10d' \$0 | tar --strip-components=2 -x
 [ -e ".bashrc" -a -z "\$(grep 'bash-user-settings.sh' .bashrc)" ] && echo "source ~/.bash-user-settings.sh" >> .bashrc
-
+[ ! -z "\$(ldd --version | grep -i -e gnu -e glibc)" ] && echo "export PATH=~/.local/nvim-linux64/bin:\\\$PATH" >> .bash-user-settings.sh
 
 
 

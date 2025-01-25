@@ -74,17 +74,22 @@ tmux kill-server
 # - In Alpine we install neovim from repo.
 # - Nvchad wants a compiler. (debian - build_essential, alpine - build-base)
 
-## Upstream NeoVim
-##https://github.com/neovim/neovim/releases
-##cd /opt/downloads
-##if [ -e "nvim-linux64.tar.gz" ]; then
-##  echo "nvim (gnu) already downloaded. Skipping"
-##else
-##  # Requires glibc
-##  curl -LO https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux64.tar.gz
-##fi
-###tar -xf nvim-linux64.tar.gz
-###rsync -a nvim-linux64/ ${HOME}/.local/
+# Workaround:
+# - Install nvim into bundle regardless.
+# - Only include (gnu) into PATH if target has GNU in `ldd --version`
+
+# Upstream NeoVim
+#https://github.com/neovim/neovim/releases
+cd /opt/downloads
+if [ -e "nvim-linux64.tar.gz" ]; then
+  echo "(gnu) nvim already downloaded. Skipping"
+else
+  curl -LO https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux64.tar.gz
+fi
+tar -C ${HOME}/.local/ -xf nvim-linux64.tar.gz
+#mkdir -p ${HOME}/.local/bin/glibc/
+#cp nvim-linux64/bin/nvim ${HOME}/.local/bin/glibc/
+#rsync -a nvim-linux64/ ${HOME}/.local/nvim-gnu
 
 ## Upstream NeoVim with AppImage
 ##if [ -e "nvim.appimage" ]; then
@@ -102,14 +107,15 @@ echo "" >> ${HOME}/.config/nvim/init.lua
 echo 'vim.cmd("hi Normal guibg=NONE")' >> ${HOME}/.config/nvim/init.lua
 echo "vim.cmd(\"cnoreabbrev <expr> q getcmdtype() == \\\":\\\" && getcmdline() == 'q' ? '' : 'q'\")" >> ${HOME}/.config/nvim/init.lua
 cp /opt/files/nvim-lua-mappings.lua ${HOME}/.config/nvim/lua/mappings.lua
-nvim &
-NVIM_PID=$!
-echo "Waiting 30 seconds to give NVIM time to download plugins."
-sleep 30
-kill $NVIM_PID
-tput reset
-tput cnorm
-clear
+nvim --headless "+Lazy! sync" +qa
+#nvim &
+#NVIM_PID=$!
+#echo "Waiting 30 seconds to give NVIM time to download plugins."
+#sleep 30
+#kill $NVIM_PID
+#tput reset
+#tput cnorm
+#clear
 
 
 ### Setup LazyGit
@@ -237,7 +243,7 @@ kill $K9S_PID
 tput reset
 tput cnorm
 clear
-yq eval ".k9s.ui.skin = ${K9S_THEME}" -i ~/.config/k9s/config.yaml
+yq eval '.k9s.ui.skin = "${K9S_THEME}"' -i ~/.config/k9s/config.yaml
 
 
 ### Setup btop
