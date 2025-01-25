@@ -108,14 +108,7 @@ echo 'vim.cmd("hi Normal guibg=NONE")' >> ${HOME}/.config/nvim/init.lua
 echo "vim.cmd(\"cnoreabbrev <expr> q getcmdtype() == \\\":\\\" && getcmdline() == 'q' ? '' : 'q'\")" >> ${HOME}/.config/nvim/init.lua
 cp /opt/files/nvim-lua-mappings.lua ${HOME}/.config/nvim/lua/mappings.lua
 nvim --headless "+Lazy! sync" +qa
-#nvim &
-#NVIM_PID=$!
-#echo "Waiting 30 seconds to give NVIM time to download plugins."
-#sleep 30
-#kill $NVIM_PID
-#tput reset
-#tput cnorm
-#clear
+patch ${HOME}/.local/share/nvim/lazy/NvChad/lua/nvchad/configs/cmp.lua /opt/files/cmd-mapping-confirm.patch
 
 
 ### Setup LazyGit
