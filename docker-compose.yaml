@@ -9,6 +9,7 @@ services:
       - LANGUAGE=en_US:en
       - LC_ALL=en_US.UTF-8
       - TERM=screen-256color
+      - OPEN_SHELL=${OPEN_SHELL}
     #user: "${UID}:${GID}"
     volumes:
       - ${PWD}/bundle/${ARCH_OS}:/home/user

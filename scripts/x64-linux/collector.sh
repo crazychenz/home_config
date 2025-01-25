@@ -262,4 +262,6 @@ yq eval ".k9s.ui.skin = ${K9S_THEME}" -i ~/.config/k9s/config.yaml
 #
 #
 cd /home/user
-/bin/bash -i 
+if [ "${OPEN_SHELL}" == "yes" ]; then
+  /bin/bash -i
+fi
